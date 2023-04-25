@@ -5,39 +5,14 @@
 //  Created by Jo Lingenfelter on 4/21/23.
 //
 
+
 import SwiftUI
 import Charts
-
-class DataSource: ObservableObject {
-    let visibleBarCount: Int = 7
-    let barWidth: CGFloat = 24
-
-    private(set) var upperBound: CGFloat = 0
-    private(set) var data: [(date: Date, value: Double)] = []
-
-    private let calendar: Calendar = {
-        Calendar.init(identifier: .gregorian)
-    }()
-
-    init() {
-        setUnitOffset(0)
-    }
-
-
-    func setUnitOffset(_ offset: Int) {
-        let initDate = calendar.startOfDay(for: Date().addingTimeInterval(TimeInterval(offset + 1 * 24 * 3600)))
-        data = (-visibleBarCount..<(2*visibleBarCount)).map { i in
-            return (date: initDate.addingTimeInterval(Double(i) * Double(24) * Double(3600)), value: abs(CGFloat(i + offset) * CGFloat(10)))
-        }
-        upperBound = data[visibleBarCount..<2*visibleBarCount].map(\.value).max() ?? 0
-        objectWillChange.send()
-    }
-}
 
 struct ScrollingBarChart: View {
     @Environment(\.locale) private var locale
 
-    private let pagingAnimationDuration: CGFloat = 1.2
+    private let pagingAnimationDuration: CGFloat = 0.2
 
     @StateObject
     private var dataSource = DataSource()
@@ -49,28 +24,12 @@ struct ScrollingBarChart: View {
     private var chartContentOffset: CGFloat = .zero
 
     @State
-    private var chartContentWidth: CGFloat = .zero {
-        didSet {
-            print("*** chartContentWidth: \(chartContentWidth)")
-        }
-    }
+    private var animatedUpperBound: CGFloat = .zero
 
     @GestureState
     private var translation: CGFloat = .zero
 
-    private var unitWidth: CGFloat {
-        let barCount: Double = Double(dataSource.visibleBarCount)
-        let usedBarSpace = barCount * dataSource.barWidth
-        let remainingSpace = chartContentWidth - usedBarSpace
-        print("*** chartContentWidth: \(chartContentWidth)")
-        let spaceBetweenBars = remainingSpace/barCount
-        print("*** spaceBetweenBars: \(spaceBetweenBars)")
-        let unitWidth = spaceBetweenBars + dataSource.barWidth
-        print("*** unitWidth: \(unitWidth)")
-        return unitWidth
-    }
-
-    private var drag: some Gesture {
+    private func dragGesture(contentWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($translation) { value, state, _ in
                 state = value.translation.width
@@ -79,8 +38,9 @@ struct ScrollingBarChart: View {
                 chartContentOffset += value.translation.width
 
                 let binCount = CGFloat(dataSource.visibleBarCount)
+                let unitWidth = contentWidth / Double(dataSource.visibleBarCount)
 
-                let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrEven)
+                let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
                 print("*** translation: \(value.translation.width)")
                 print("*** unitOffset: \(unitOffset)")
                 var predictedUnitOffset = (value.predictedEndTranslation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
@@ -95,13 +55,11 @@ struct ScrollingBarChart: View {
                     } else {
                         chartContentOffset = unitOffset * unitWidth
                     }
-
                 }
-
-                currentUnitOffset -= Int(chartContentOffset / unitWidth)
 
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(pagingAnimationDuration))
+                    currentUnitOffset -= Int(chartContentOffset / unitWidth)
                     dataSource.setUnitOffset(currentUnitOffset)
                     chartContentOffset = 0
                 }
@@ -134,14 +92,17 @@ struct ScrollingBarChart: View {
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
                         )
-                        .gesture(drag)
+                        .gesture(dragGesture(contentWidth: chartGeometry.size.width))
+                        .animating(changeOf: dataSource.upperBound,
+                                   into: $animatedUpperBound,
+                                   animation: .spring())
                     }
+                    .scrollDisabled(true)
                     .frame(
                         width: chartGeometry.size.width,
                         height: chartGeometry.size.height,
                         alignment: .leading
                     )
-                    .measuring(\.size.width, assign: $chartContentWidth)
                 }
 
                 chartYAxis
@@ -153,9 +114,8 @@ struct ScrollingBarChart: View {
     private var chart: some ChartContent {
         ForEach(dataSource.data, id: \.date) { item in
             BarMark(
-                x: .value("Day", item.date, unit: .weekday),
-                y: .value("Value", min(item.value, dataSource.upperBound)),
-                width: .fixed(dataSource.barWidth)
+                x: .value("Day", item.date, unit: .day),
+                y: .value("Value", min(item.value, animatedUpperBound))
             )
         }
     }
@@ -178,5 +138,7 @@ struct ScrollingBarChart: View {
 struct ScrollingBarChart_Previews: PreviewProvider {
     static var previews: some View {
         ScrollingBarChart()
+            .frame(height: 300)
+            .scenePadding(.horizontal)
     }
 }
