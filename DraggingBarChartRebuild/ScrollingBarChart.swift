@@ -27,26 +27,48 @@ struct ScrollingBarChart: View {
     private var animatedUpperBound: CGFloat = .zero
 
     @GestureState
-    private var translation: CGFloat = .zero
+    private var translation: DragGesture.Value? {
+        didSet {
+            print("*** translation: \(translation)")
+        }
+    }
+
+    @State
+    private var isLongPressActive: Bool = false {
+        didSet {
+            print("*** isLongPressActive: \(self.isLongPressActive)")
+        }
+    }
+
+    @State
+    private var selectedIndex: Int? = nil {
+        didSet {
+            print("*** selectedIndex: \(selectedIndex)")
+        }
+    }
 
     private func dragGesture(contentWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($translation) { value, state, _ in
-                state = value.translation.width
+                state = value
             }
             .onEnded { value in
+                guard !isLongPressActive else {
+                    isLongPressActive = false
+                    return
+                }
+
                 chartContentOffset += value.translation.width
 
                 let binCount = CGFloat(dataSource.visibleBarCount)
                 let unitWidth = contentWidth / Double(dataSource.visibleBarCount)
 
                 let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
-                print("*** translation: \(value.translation.width)")
                 print("*** unitOffset: \(unitOffset)")
                 var predictedUnitOffset = (value.predictedEndTranslation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
 
-                 // If swipe carefully, change to the nearest time unit
-                 // If swipe fast enough, change to the next page
+                // If swipe carefully, change to the nearest time unit
+                // If swipe fast enough, change to the next page
                 predictedUnitOffset = max(-binCount, min(binCount, predictedUnitOffset))
                 print("*** predictedOffset: \(predictedUnitOffset)")
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
@@ -87,12 +109,22 @@ struct ScrollingBarChart: View {
                             }
                         }
                         .offset(x: chartContentOffset - chartGeometry.size.width)
-                        .offset(x: translation)
+                        .offset(x: isLongPressActive ? 0.0 : (translation?.translation.width ?? 0.0))
                         .frame(
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
                         )
-                        .gesture(dragGesture(contentWidth: chartGeometry.size.width))
+                        .chartOverlay(alignment: .topLeading) { chart in
+                            if isLongPressActive, let translation {
+                                Color.black
+                                    .frame(width: 1)
+                                    .offset(x: translation.location.x)
+                            }
+                        }
+                        .onLongPressGesture {
+                            self.isLongPressActive = true
+                        }
+                        .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
                         .animating(changeOf: dataSource.upperBound,
                                    into: $animatedUpperBound,
                                    animation: .spring())
