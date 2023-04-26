@@ -9,6 +9,16 @@
 import SwiftUI
 import Charts
 
+struct AnnotationBoundsPreferenceKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        if let nextValue = nextValue() {
+            value = nextValue
+        }
+    }
+}
+
 struct ScrollingBarChart: View {
     @Environment(\.locale) private var locale
 
@@ -71,11 +81,13 @@ struct ScrollingBarChart: View {
             }
     }
 
-    private var chart: some ChartContent {
+    var chart: some ChartContent {
         ForEach(dataSource.data, id: \.date) { item in
             BarMark(
                 x: .value("Day", item.date, unit: .day),
-                y: .value("Value", min(item.value, animatedUpperBound))
+                y: .value("Value", min(item.value, animatedUpperBound)),
+                width: 24,
+                stacking: .unstacked
             )
 
             BarMark(
@@ -135,16 +147,17 @@ struct ScrollingBarChart: View {
                         )
                         .chartOverlay { chart in
                             interactiveChartContent(chart: chart) { selectedBar in
-                                Text("\(selectedBar.date)")
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .padding()
-                                    .frame(maxWidth: 150)
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .strokeBorder(.mint, lineWidth: 3)
-                                            .background(RoundedRectangle(cornerRadius: 10.0).fill(Color.yellow.gradient))
+                                ZStack {
+                                    ZStack {
+                                        Color.yellow
+                                        Text("\(selectedBar.date)")
+                                            .fixedSize(horizontal: false, vertical: true)
                                     }
-                                    .offset(x:-75)
+                                    .fixedSize()
+                                    .anchorPreference(key: AnnotationBoundsPreferenceKey.self, value: .bounds) { rect in
+                                        return rect
+                                    }
+                                }
                             }
                         }
                         .chartOverlay(alignment: .topLeading) { chart in

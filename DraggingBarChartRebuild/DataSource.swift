@@ -10,7 +10,7 @@ import Foundation
 typealias ChartData = (date: Date, value: Double)
 
 class DataSource: ObservableObject {
-    let visibleBarCount: Int = 7
+    let visibleBarCount: Int = 4
 
     private(set) var upperBound: CGFloat = 0
     private(set) var data: [ChartData] = []
