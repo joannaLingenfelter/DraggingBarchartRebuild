@@ -27,22 +27,22 @@ struct ScrollingBarChart: View {
     private var animatedUpperBound: CGFloat = .zero
 
     @GestureState
-    private var translation: DragGesture.Value?
+    private var translation: CGFloat = .zero
+
+//    @State
+//    private var isLongPressActive: Bool = false
 
     @State
-    private var isLongPressActive: Bool = false
-
-    @State
-    private var selectedChartData: ChartData?
+    private var selectedChartData: Date?
 
     private func dragGesture(contentWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($translation) { value, state, _ in
-                state = value
+                state = value.translation.width
             }
             .onEnded { value in
-                guard !isLongPressActive else {
-                    isLongPressActive = false
+                guard selectedChartData == nil else {
+                    selectedChartData = nil
                     return
                 }
 
@@ -95,7 +95,7 @@ struct ScrollingBarChart: View {
                             }
                         }
                         .offset(x: chartContentOffset - chartGeometry.size.width)
-                        .offset(x: isLongPressActive ? 0.0 : (translation?.translation.width ?? 0.0))
+                        .offset(x: translation)
                         .frame(
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
@@ -107,12 +107,20 @@ struct ScrollingBarChart: View {
                             }
                         }
                         .chartOverlay(alignment: .topLeading) { chart in
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture(coordinateSpace: .local) { location in
-                                    isLongPressActive = true
-                                }
-                                .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
+                            GeometryReader { geometry in
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture(coordinateSpace: .local) { location in
+                                        let originX = geometry[chart.plotAreaFrame].origin.x
+                                        let clampedLocationX = min(max(location.x, 0), geometry.size.width)
+                                        let currentX = clampedLocationX - originX
+
+                                        if let selected = chart.value(atX: currentX, as: Date.self) {
+                                            self.selectedChartData = selected
+                                        }
+                                    }
+                                    .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
+                            }
                         }
                         .chartBackground(alignment: .topLeading) { chart in
                             interactiveChartContent(chart: chart) { _ in
@@ -144,18 +152,16 @@ struct ScrollingBarChart: View {
 
     @ViewBuilder
     private func interactiveChartContent(chart: ChartProxy, @ViewBuilder content: @escaping (ChartData) -> some View) -> some View {
-        if isLongPressActive, let translation {
+        if let selectedChartData {
+            Color.clear
             GeometryReader { geometry in
                 let originX = geometry[chart.plotAreaFrame].origin.x
-                let translationX = min(max(translation.location.x, 0), geometry.size.width)
-                let currentX = translationX - originX
 
-                if let value = chart.value(atX: currentX, as: Date.self),
-                   let selectedBar = dataSource.indexOfDate(closestTo: value),
-                   let snappingX = chart.position(forX: selectedBar.date) {
-                    let snappingOffset = snappingX + originX + unitWidth(contentWidth: geometry.size.width/3)/2
+                if let selectedBar = dataSource.indexOfDate(closestTo: selectedChartData),
+                   let chartX = chart.position(forX: selectedBar.date) {
+                    let chartXOffset = chartX + originX + unitWidth(contentWidth: geometry.size.width/3)/2
                     content(selectedBar)
-                        .offset(x: snappingOffset)
+                        .offset(x: chartXOffset)
                 }
             }
         }
