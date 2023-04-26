@@ -27,25 +27,10 @@ struct ScrollingBarChart: View {
     private var animatedUpperBound: CGFloat = .zero
 
     @GestureState
-    private var translation: DragGesture.Value? {
-        didSet {
-            print("*** translation: \(translation)")
-        }
-    }
+    private var translation: DragGesture.Value?
 
     @State
-    private var isLongPressActive: Bool = false {
-        didSet {
-            print("*** isLongPressActive: \(self.isLongPressActive)")
-        }
-    }
-
-    @State
-    private var selectedIndex: Int? = nil {
-        didSet {
-            print("*** selectedIndex: \(selectedIndex)")
-        }
-    }
+    private var isLongPressActive: Bool = false
 
     private func dragGesture(contentWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
@@ -117,19 +102,15 @@ struct ScrollingBarChart: View {
                                 GeometryReader { geometry in
                                     let originX = geometry[chart.plotAreaFrame].origin.x
                                     let translationX = min(max(translation.location.x, 0), geometry.size.width)
-                                    //let currentX = translation.location.applying(.init(translationX: -originX, y: 0)).x
                                     let currentX = translationX - originX
 
                                     Color.black
-                                        .frame(width: 1, alignment: .leading)
+                                        .frame(
+                                            width: 1,
+                                            height: chart.plotAreaSize.height,
+                                            alignment: .leading
+                                        )
                                         .offset(x: translationX)
-                                        .onChange(of: currentX) { newValue in
-                                            print("*** currentX: \(currentX)")
-//                                            print("*** translationX: \(translationX)")
-                                            print("*** originX: \(originX)")
-
-                                        }
-
 
                                     if let value = chart.value(atX: currentX, as: Date.self),
                                        let selectedBar = dataSource.indexOfDate(closestTo: value) {
