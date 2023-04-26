@@ -52,9 +52,8 @@ struct ScrollingBarChart: View {
                 let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
                 var predictedUnitOffset = (value.predictedEndTranslation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
 
-                // If swipe carefully, change to the nearest time unit
-                // If swipe fast enough, change to the next page
                 predictedUnitOffset = max(-barCount, min(barCount, predictedUnitOffset))
+
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
                     if predictedUnitOffset.magnitude >= Double(dataSource.visibleBarCount) {
                         chartContentOffset = predictedUnitOffset * unitWidth
@@ -70,6 +69,39 @@ struct ScrollingBarChart: View {
                     chartContentOffset = 0
                 }
             }
+    }
+
+    private var chart: some ChartContent {
+        ForEach(dataSource.data, id: \.date) { item in
+            BarMark(
+                x: .value("Day", item.date, unit: .day),
+                y: .value("Value", min(item.value, animatedUpperBound))
+            )
+
+            BarMark(
+                x: .value("Day", item.date, unit: .day),
+                y: .value("Value", min(item.value, animatedUpperBound) * 1.25),
+                width: 0,
+                stacking: .unstacked
+            )
+            .accessibilityHidden(true)
+        }
+    }
+
+    private var chartYAxis: some View {
+        Chart {
+            chart
+        }
+        .foregroundStyle(.clear)
+        .chartYAxis {
+            AxisMarks(
+                position: .trailing,
+                values: .automatic(desiredCount: 4)
+            )
+        }
+        .chartPlotStyle { plot in
+            plot.frame(width: 0)
+        }
     }
 
     var body: some View {
@@ -88,7 +120,10 @@ struct ScrollingBarChart: View {
                             )
                         }
                         .chartYAxis {
-                            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) {
+                            AxisMarks(
+                                position: .trailing,
+                                values: .automatic(desiredCount: 4))
+                            {
                                 AxisGridLine()
                             }
                         }
@@ -98,10 +133,18 @@ struct ScrollingBarChart: View {
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
                         )
-                        .chartOverlay(alignment: .topLeading) { chart in
+                        .chartOverlay { chart in
                             interactiveChartContent(chart: chart) { selectedBar in
                                 Text("\(selectedBar.date)")
+                                    .fixedSize(horizontal: false, vertical: true)
                                     .padding()
+                                    .frame(maxWidth: 150)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .strokeBorder(.mint, lineWidth: 3)
+                                            .background(RoundedRectangle(cornerRadius: 10.0).fill(Color.yellow.gradient))
+                                    }
+                                    .offset(x:-75)
                             }
                         }
                         .chartOverlay(alignment: .topLeading) { chart in
@@ -176,28 +219,6 @@ struct ScrollingBarChart: View {
 
     private func unitWidth(contentWidth: CGFloat) -> CGFloat {
         contentWidth / Double(dataSource.visibleBarCount)
-    }
-
-    private var chart: some ChartContent {
-        ForEach(dataSource.data, id: \.date) { item in
-            BarMark(
-                x: .value("Day", item.date, unit: .day),
-                y: .value("Value", min(item.value, animatedUpperBound))
-            )
-        }
-    }
-
-    private var chartYAxis: some View {
-        Chart {
-            chart
-        }
-        .foregroundStyle(.clear)
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4))
-        }
-        .chartPlotStyle { plot in
-            plot.frame(width: 0)
-        }
     }
 }
 
