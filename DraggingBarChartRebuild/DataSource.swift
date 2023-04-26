@@ -7,11 +7,13 @@
 
 import Foundation
 
+typealias ChartData = (date: Date, value: Double)
+
 class DataSource: ObservableObject {
     let visibleBarCount: Int = 7
 
     private(set) var upperBound: CGFloat = 0
-    private(set) var data: [(date: Date, value: Double)] = []
+    private(set) var data: [ChartData] = []
 
     private let calendar = Calendar(identifier: .gregorian)
 
@@ -20,7 +22,7 @@ class DataSource: ObservableObject {
     }
 
     func setUnitOffset(_ offset: Int) {
-        data = (-visibleBarCount..<(2*visibleBarCount)).map { i -> (date: Date, value: Double) in
+        data = (-visibleBarCount..<(2*visibleBarCount)).map { i -> ChartData in
             let totalOffset = i + offset
             let startOfToday = calendar.startOfDay(for: .now)
             let date = calendar.date(byAdding: .day, value: totalOffset, to: startOfToday)!
@@ -31,7 +33,7 @@ class DataSource: ObservableObject {
         objectWillChange.send()
     }
 
-    func indexOfDate(closestTo date: Date) -> (date: Date, value: Double)? {
+    func indexOfDate(closestTo date: Date) -> ChartData? {
         data.sorted { lhs, rhs in
             if calendar.isDate(date, inSameDayAs: lhs.date) {
                 return true

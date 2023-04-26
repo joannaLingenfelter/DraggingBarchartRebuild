@@ -98,43 +98,19 @@ struct ScrollingBarChart: View {
                             height: containerGeometry.size.height
                         )
                         .chartOverlay(alignment: .topLeading) { chart in
-                            if isLongPressActive, let translation {
-                                GeometryReader { geometry in
-                                    let originX = geometry[chart.plotAreaFrame].origin.x
-                                    let translationX = min(max(translation.location.x, 0), geometry.size.width)
-                                    let currentX = translationX - originX
-
-                                    if let value = chart.value(atX: currentX, as: Date.self),
-                                       let selectedBar = dataSource.indexOfDate(closestTo: value),
-                                       let snappingX = chart.position(forX: selectedBar.date) {
-                                        let snappingOffset = snappingX + originX + unitWidth(contentWidth: chartGeometry.size.width/CGFloat(2))
-                                        Text("\(selectedBar.date)")
-                                            .padding()
-                                            .offset(x: snappingOffset)
-                                    }
-                                }
+                            interactiveChartContent(chart: chart) { selectedBar in
+                                Text("\(selectedBar.date)")
+                                    .padding()
                             }
                         }
                         .chartBackground(alignment: .topLeading) { chart in
-                            if isLongPressActive, let translation {
-                                GeometryReader { geometry in
-                                    let originX = geometry[chart.plotAreaFrame].origin.x
-                                    let translationX = min(max(translation.location.x, 0), geometry.size.width)
-                                    let currentX = translationX - originX
-
-                                    if let value = chart.value(atX: currentX, as: Date.self),
-                                       let selectedBar = dataSource.indexOfDate(closestTo: value),
-                                       let snappingX = chart.position(forX: selectedBar.date) {
-                                        let snappingOffset = snappingX + originX + unitWidth(contentWidth: chartGeometry.size.width/CGFloat(2))
-                                        Color.black
-                                            .frame(
-                                                width: 1,
-                                                height: chart.plotAreaSize.height,
-                                                alignment: .leading
-                                            )
-                                            .offset(x: snappingOffset)
-                                    }
-                                }
+                            interactiveChartContent(chart: chart) { _ in
+                                Color.black
+                                    .frame(
+                                        width: 1,
+                                        height: chart.plotAreaSize.height,
+                                        alignment: .leading
+                                    )
                             }
                         }
                         .onLongPressGesture {
@@ -156,6 +132,25 @@ struct ScrollingBarChart: View {
                 chartYAxis
             }
             .frame(height: containerGeometry.size.height)
+        }
+    }
+
+    @ViewBuilder
+    private func interactiveChartContent(chart: ChartProxy, @ViewBuilder content: @escaping (ChartData) -> some View) -> some View {
+        if isLongPressActive, let translation {
+            GeometryReader { geometry in
+                let originX = geometry[chart.plotAreaFrame].origin.x
+                let translationX = min(max(translation.location.x, 0), geometry.size.width)
+                let currentX = translationX - originX
+
+                if let value = chart.value(atX: currentX, as: Date.self),
+                   let selectedBar = dataSource.indexOfDate(closestTo: value),
+                   let snappingX = chart.position(forX: selectedBar.date) {
+                    let snappingOffset = snappingX + originX + unitWidth(contentWidth: geometry.size.width/CGFloat(2))
+                    content(selectedBar)
+                        .offset(x: snappingOffset)
+                }
+            }
         }
     }
 
