@@ -104,6 +104,22 @@ struct ScrollingBarChart: View {
                                     let translationX = min(max(translation.location.x, 0), geometry.size.width)
                                     let currentX = translationX - originX
 
+                                    if let value = chart.value(atX: currentX, as: Date.self),
+                                       let selectedBar = dataSource.indexOfDate(closestTo: value) {
+                                        Text("\(selectedBar.date)")
+                                            .padding()
+                                            .offset(x: translation.location.x)
+                                    }
+                                }
+                            }
+                        }
+                        .chartBackground(alignment: .topLeading) { chart in
+                            if isLongPressActive, let translation {
+                                GeometryReader { geometry in
+                                    let originX = geometry[chart.plotAreaFrame].origin.x
+                                    let translationX = min(max(translation.location.x, 0), geometry.size.width)
+                                    let currentX = translationX - originX
+
                                     Color.black
                                         .frame(
                                             width: 1,
@@ -111,13 +127,6 @@ struct ScrollingBarChart: View {
                                             alignment: .leading
                                         )
                                         .offset(x: translationX)
-
-                                    if let value = chart.value(atX: currentX, as: Date.self),
-                                       let selectedBar = dataSource.indexOfDate(closestTo: value) {
-                                        Text("\(selectedBar.date)")
-                                            .padding()
-                                            .offset(x: translation.location.x)
-                                    }
                                 }
                             }
                         }
