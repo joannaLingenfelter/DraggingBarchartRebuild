@@ -146,7 +146,7 @@ struct ScrollingBarChart: View {
                 if let value = chart.value(atX: currentX, as: Date.self),
                    let selectedBar = dataSource.indexOfDate(closestTo: value),
                    let snappingX = chart.position(forX: selectedBar.date) {
-                    let snappingOffset = snappingX + originX + unitWidth(contentWidth: geometry.size.width/CGFloat(2))
+                    let snappingOffset = snappingX + originX + unitWidth(contentWidth: geometry.size.width/3)/2
                     content(selectedBar)
                         .offset(x: snappingOffset)
                 }
