@@ -60,17 +60,15 @@ struct ScrollingBarChart: View {
 
                 chartContentOffset += value.translation.width
 
-                let binCount = CGFloat(dataSource.visibleBarCount)
-                let unitWidth = contentWidth / Double(dataSource.visibleBarCount)
+                let barCount = Double(dataSource.visibleBarCount)
+                let unitWidth = contentWidth / barCount
 
                 let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
-                print("*** unitOffset: \(unitOffset)")
                 var predictedUnitOffset = (value.predictedEndTranslation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
 
                 // If swipe carefully, change to the nearest time unit
                 // If swipe fast enough, change to the next page
-                predictedUnitOffset = max(-binCount, min(binCount, predictedUnitOffset))
-                print("*** predictedOffset: \(predictedUnitOffset)")
+                predictedUnitOffset = max(-barCount, min(barCount, predictedUnitOffset))
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
                     if predictedUnitOffset.magnitude >= Double(dataSource.visibleBarCount) {
                         chartContentOffset = predictedUnitOffset * unitWidth
@@ -116,9 +114,30 @@ struct ScrollingBarChart: View {
                         )
                         .chartOverlay(alignment: .topLeading) { chart in
                             if isLongPressActive, let translation {
-                                Color.black
-                                    .frame(width: 1)
-                                    .offset(x: translation.location.x)
+                                GeometryReader { geometry in
+                                    let originX = geometry[chart.plotAreaFrame].origin.x
+                                    let translationX = min(max(translation.location.x, 0), geometry.size.width)
+                                    //let currentX = translation.location.applying(.init(translationX: -originX, y: 0)).x
+                                    let currentX = translationX - originX
+
+                                    Color.black
+                                        .frame(width: 1, alignment: .leading)
+                                        .offset(x: translationX)
+                                        .onChange(of: currentX) { newValue in
+                                            print("*** currentX: \(currentX)")
+//                                            print("*** translationX: \(translationX)")
+                                            print("*** originX: \(originX)")
+
+                                        }
+
+
+                                    if let value = chart.value(atX: currentX, as: Date.self),
+                                       let selectedBar = dataSource.indexOfDate(closestTo: value) {
+                                        Text("\(selectedBar.date)")
+                                            .padding()
+                                            .offset(x: translation.location.x)
+                                    }
+                                }
                             }
                         }
                         .onLongPressGesture {

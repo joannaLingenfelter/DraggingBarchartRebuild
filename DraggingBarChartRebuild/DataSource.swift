@@ -30,4 +30,17 @@ class DataSource: ObservableObject {
         upperBound = data[visibleBarCount..<2*visibleBarCount].map(\.value).max() ?? 0
         objectWillChange.send()
     }
+
+    func indexOfDate(closestTo date: Date) -> (date: Date, value: Double)? {
+        data.sorted { lhs, rhs in
+            if calendar.isDate(date, inSameDayAs: lhs.date) {
+                return true
+            } else if calendar.isDate(date, inSameDayAs: rhs.date) {
+                return false
+            } else {
+                return lhs.date.timeIntervalSince(date).magnitude < rhs.date.timeIntervalSince(date).magnitude
+            }
+        }
+        .first
+    }
 }
