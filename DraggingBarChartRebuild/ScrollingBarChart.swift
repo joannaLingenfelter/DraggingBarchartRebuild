@@ -105,10 +105,12 @@ struct ScrollingBarChart: View {
                                     let currentX = translationX - originX
 
                                     if let value = chart.value(atX: currentX, as: Date.self),
-                                       let selectedBar = dataSource.indexOfDate(closestTo: value) {
+                                       let selectedBar = dataSource.indexOfDate(closestTo: value),
+                                       let snappingX = chart.position(forX: selectedBar.date) {
+                                        let snappingOffset = snappingX + originX + unitWidth(contentWidth: chartGeometry.size.width/CGFloat(2))
                                         Text("\(selectedBar.date)")
                                             .padding()
-                                            .offset(x: translation.location.x)
+                                            .offset(x: snappingOffset)
                                     }
                                 }
                             }
@@ -120,13 +122,18 @@ struct ScrollingBarChart: View {
                                     let translationX = min(max(translation.location.x, 0), geometry.size.width)
                                     let currentX = translationX - originX
 
-                                    Color.black
-                                        .frame(
-                                            width: 1,
-                                            height: chart.plotAreaSize.height,
-                                            alignment: .leading
-                                        )
-                                        .offset(x: translationX)
+                                    if let value = chart.value(atX: currentX, as: Date.self),
+                                       let selectedBar = dataSource.indexOfDate(closestTo: value),
+                                       let snappingX = chart.position(forX: selectedBar.date) {
+                                        let snappingOffset = snappingX + originX + unitWidth(contentWidth: chartGeometry.size.width/CGFloat(2))
+                                        Color.black
+                                            .frame(
+                                                width: 1,
+                                                height: chart.plotAreaSize.height,
+                                                alignment: .leading
+                                            )
+                                            .offset(x: snappingOffset)
+                                    }
                                 }
                             }
                         }
@@ -150,6 +157,10 @@ struct ScrollingBarChart: View {
             }
             .frame(height: containerGeometry.size.height)
         }
+    }
+
+    private func unitWidth(contentWidth: CGFloat) -> CGFloat {
+        contentWidth / Double(dataSource.visibleBarCount)
     }
 
     private var chart: some ChartContent {
