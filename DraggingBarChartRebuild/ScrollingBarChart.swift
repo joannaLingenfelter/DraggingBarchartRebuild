@@ -32,6 +32,9 @@ struct ScrollingBarChart: View {
     @State
     private var isLongPressActive: Bool = false
 
+    @State
+    private var selectedChartData: ChartData?
+
     private func dragGesture(contentWidth: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .updating($translation) { value, state, _ in
@@ -103,6 +106,14 @@ struct ScrollingBarChart: View {
                                     .padding()
                             }
                         }
+                        .chartOverlay(alignment: .topLeading) { chart in
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .onTapGesture(coordinateSpace: .local) { location in
+                                    isLongPressActive = true
+                                }
+                                .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
+                        }
                         .chartBackground(alignment: .topLeading) { chart in
                             interactiveChartContent(chart: chart) { _ in
                                 Color.black
@@ -113,10 +124,6 @@ struct ScrollingBarChart: View {
                                     )
                             }
                         }
-                        .onLongPressGesture {
-                            self.isLongPressActive = true
-                        }
-                        .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
                         .animating(changeOf: dataSource.upperBound,
                                    into: $animatedUpperBound,
                                    animation: .spring())
