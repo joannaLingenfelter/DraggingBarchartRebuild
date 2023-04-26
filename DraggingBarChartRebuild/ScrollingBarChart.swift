@@ -29,23 +29,21 @@ struct ScrollingBarChart: View {
     @GestureState
     private var translation: CGFloat = .zero
 
-//    @State
-//    private var isLongPressActive: Bool = false
-
     @State
-    private var selectedChartData: Date?
+    private var selectedChartData: ChartData?
 
     private func dragGesture(contentWidth: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 0)
+        DragGesture(minimumDistance: 0.5)
             .updating($translation) { value, state, _ in
                 state = value.translation.width
             }
-            .onEnded { value in
+            .onChanged { _ in
                 guard selectedChartData == nil else {
                     selectedChartData = nil
                     return
                 }
-
+            }
+            .onEnded { value in
                 chartContentOffset += value.translation.width
 
                 let barCount = Double(dataSource.visibleBarCount)
@@ -115,8 +113,17 @@ struct ScrollingBarChart: View {
                                         let clampedLocationX = min(max(location.x, 0), geometry.size.width)
                                         let currentX = clampedLocationX - originX
 
-                                        if let selected = chart.value(atX: currentX, as: Date.self) {
-                                            self.selectedChartData = selected
+                                        if let selectedDate = chart.value(atX: currentX, as: Date.self),
+                                           let selectedBar = dataSource.indexOfDate(closestTo: selectedDate) {
+                                            if let selectedChartData {
+                                                if selectedBar == selectedChartData {
+                                                    self.selectedChartData = nil
+                                                } else {
+                                                    self.selectedChartData = selectedBar
+                                                }
+                                            } else {
+                                                self.selectedChartData = selectedBar
+                                            }
                                         }
                                     }
                                     .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
@@ -157,10 +164,10 @@ struct ScrollingBarChart: View {
             GeometryReader { geometry in
                 let originX = geometry[chart.plotAreaFrame].origin.x
 
-                if let selectedBar = dataSource.indexOfDate(closestTo: selectedChartData),
-                   let chartX = chart.position(forX: selectedBar.date) {
+                if let selectedChartData,
+                   let chartX = chart.position(forX: selectedChartData.date) {
                     let chartXOffset = chartX + originX + unitWidth(contentWidth: geometry.size.width/3)/2
-                    content(selectedBar)
+                    content(selectedChartData)
                         .offset(x: chartXOffset)
                 }
             }
