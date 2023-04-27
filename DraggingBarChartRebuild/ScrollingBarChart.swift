@@ -9,13 +9,31 @@
 import SwiftUI
 import Charts
 
-struct AnnotationBoundsPreferenceKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
-
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        if let nextValue = nextValue() {
-            value = nextValue
+extension CGRect {
+    func scoot(_ rect: CGRect) -> CGSize {
+        guard !self.contains(rect),
+              self.intersects(rect) else {
+            return .zero
         }
+
+        var translation: CGSize = .zero
+
+        translation.width += max(self.minX - rect.minX, 0)
+        print("shift right: \(max(self.minX - rect.minX, 0))")
+        translation.width -= max(rect.maxX - self.maxX, 0)
+        print("shift left: \(max(rect.maxX - self.maxX, 0))")
+        translation.height += max(self.minY - rect.minY, 0)
+        translation.height -= max(rect.maxY - self.maxY, 0)
+
+        return translation
+    }
+}
+
+struct AnnotationBoundsPreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
@@ -23,6 +41,7 @@ struct ScrollingBarChart: View {
     @Environment(\.locale) private var locale
 
     private let pagingAnimationDuration: CGFloat = 0.2
+    private let barWidth: CGFloat = 24.0
 
     @StateObject
     private var dataSource = DataSource()
@@ -48,10 +67,10 @@ struct ScrollingBarChart: View {
                 state = value.translation.width
             }
             .onChanged { _ in
-                guard selectedChartData == nil else {
-                    selectedChartData = nil
-                    return
-                }
+//                guard selectedChartData == nil else {
+//                    selectedChartData = nil
+//                    return
+//                }
             }
             .onEnded { value in
                 chartContentOffset += value.translation.width
@@ -81,19 +100,20 @@ struct ScrollingBarChart: View {
             }
     }
 
-    var chart: some ChartContent {
+    @ChartContentBuilder
+    func chart(showsAnnotations: Bool) -> some ChartContent {
         ForEach(dataSource.data, id: \.date) { item in
             BarMark(
                 x: .value("Day", item.date, unit: .day),
                 y: .value("Value", min(item.value, animatedUpperBound)),
-                width: 24,
+                width: .fixed(barWidth),
                 stacking: .unstacked
             )
 
             BarMark(
                 x: .value("Day", item.date, unit: .day),
                 y: .value("Value", min(item.value, animatedUpperBound) * 1.25),
-                width: 0,
+                width: .fixed(barWidth),
                 stacking: .unstacked
             )
             .accessibilityHidden(true)
@@ -102,7 +122,7 @@ struct ScrollingBarChart: View {
 
     private var chartYAxis: some View {
         Chart {
-            chart
+            chart(showsAnnotations: false)
         }
         .foregroundStyle(.clear)
         .chartYAxis {
@@ -122,7 +142,7 @@ struct ScrollingBarChart: View {
                 GeometryReader { chartGeometry in
                     ScrollView(.horizontal) {
                         Chart {
-                            chart
+                            chart(showsAnnotations: true)
                         }
                         .chartXAxis {
                             AxisMarks(
@@ -145,21 +165,6 @@ struct ScrollingBarChart: View {
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
                         )
-                        .chartOverlay { chart in
-                            interactiveChartContent(chart: chart) { selectedBar in
-                                ZStack {
-                                    ZStack {
-                                        Color.yellow
-                                        Text("\(selectedBar.date)")
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    .fixedSize()
-                                    .anchorPreference(key: AnnotationBoundsPreferenceKey.self, value: .bounds) { rect in
-                                        return rect
-                                    }
-                                }
-                            }
-                        }
                         .chartOverlay(alignment: .topLeading) { chart in
                             GeometryReader { geometry in
                                 Color.clear
@@ -183,6 +188,39 @@ struct ScrollingBarChart: View {
                                         }
                                     }
                                     .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
+                            }
+                        }
+                        .chartOverlay { chart in
+                            if let selectedChartData {
+                                GeometryReader { geometry in
+                                    let originX = geometry[chart.plotAreaFrame].origin.x
+                                    let chartWidth = geometry[chart.plotAreaFrame].size.width
+                                    let chartHeight = geometry[chart.plotAreaFrame].size.height
+
+                                    if let selectedChartData,
+                                       let chartX = chart.position(forX: selectedChartData.date) {
+                                        let unitWidth = unitWidth(contentWidth: chartWidth/3)
+                                        let chartXOffset = chartX + originX - unitWidth/3
+                                        let overlayWidth = unitWidth + 2/3*(unitWidth)
+
+                                        let visibleChartRect = geometry[chart.plotAreaFrame]
+
+                                        let containerRect = CGRect(x: chartWidth/3, y: 0, width: chartWidth, height: chartHeight)
+                                        let overlayRect = CGRect(x: chartXOffset, y: 0, width: overlayWidth, height: 100)
+
+                                        let scoot = { () -> CGSize in
+                                            var _scoot = containerRect.scoot(overlayRect)
+                                            _scoot.width += chartXOffset
+                                            print("*** scoot: \(String(describing: _scoot))")
+                                            return _scoot
+                                        }()
+
+                                        Text("scoot:\(String(describing: scoot))\nrect: \(String(describing: visibleChartRect))")
+                                            .frame(width: overlayWidth, height: 100, alignment: .top)
+                                            .background(Color.yellow)
+                                            .offset(scoot)
+                                    }
+                                }
                             }
                         }
                         .chartBackground(alignment: .topLeading) { chart in
@@ -211,12 +249,12 @@ struct ScrollingBarChart: View {
             }
             .frame(height: containerGeometry.size.height)
         }
+        .coordinateSpace(name: "Chart")
     }
 
     @ViewBuilder
     private func interactiveChartContent(chart: ChartProxy, @ViewBuilder content: @escaping (ChartData) -> some View) -> some View {
         if let selectedChartData {
-            Color.clear
             GeometryReader { geometry in
                 let originX = geometry[chart.plotAreaFrame].origin.x
 
