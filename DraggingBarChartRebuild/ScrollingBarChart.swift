@@ -69,10 +69,10 @@ struct ScrollingBarChart: View {
                 state = value.translation.width
             }
             .onChanged { _ in
-//                guard selectedChartData == nil else {
-//                    selectedChartData = nil
-//                    return
-//                }
+                guard selectedChartData == nil else {
+                    selectedChartData = nil
+                    return
+                }
             }
             .onEnded { value in
                 chartContentOffset += value.translation.width
@@ -118,6 +118,7 @@ struct ScrollingBarChart: View {
                 width: .fixed(barWidth),
                 stacking: .unstacked
             )
+            .foregroundStyle(.clear)
             .accessibilityHidden(true)
         }
     }
@@ -218,13 +219,21 @@ struct ScrollingBarChart: View {
                                             return _scoot
                                         }()
 
-                                        Text("scoot:\(String(describing: scoot))\nrect: \(String(describing: visibleChartWidth))")
-                                            .minimumScaleFactor(0.3)
-                                            .padding(10)
-                                            .background(Color.yellow)
-                                            .padding(10)
-                                            .frame(width: overlayWidth, height: 75, alignment: .center)
-                                            .offset(scoot)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("scoot:\(String(describing: scoot))")
+                                            Text("rect: \(String(describing: visibleChartWidth))")
+                                        }
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.3)
+                                        .padding(10)
+                                        .background {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .strokeBorder(Color.green, lineWidth: 3)
+                                                .background(Color.yellow.clipShape(RoundedRectangle(cornerRadius: 10)))
+                                        }
+                                        .padding(10)
+                                        .frame(width: overlayWidth, height: 75, alignment: .center)
+                                        .offset(scoot)
                                     }
                                 }
                             }
