@@ -21,21 +21,11 @@ extension CGRect {
         var translation: CGSize = .zero
 
         translation.width += max(self.minX - rect.minX, 0)
-        print("shift right: \(max(self.minX - rect.minX, 0))")
         translation.width -= max(rect.maxX - self.maxX, 0)
-        print("shift left: \(max(rect.maxX - self.maxX, 0))")
         translation.height += max(self.minY - rect.minY, 0)
         translation.height -= max(rect.maxY - self.maxY, 0)
 
         return translation
-    }
-}
-
-struct AnnotationBoundsPreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
     }
 }
 
@@ -198,54 +188,46 @@ struct ScrollingBarChart: View {
                                 GeometryReader { geometry in
                                     let originX = geometry[chart.plotAreaFrame].origin.x
                                     let chartWidth = geometry[chart.plotAreaFrame].size.width
-                                    let chartHeight = geometry[chart.plotAreaFrame].size.height
 
                                     if let selectedChartData,
-                                       let chartX = chart.position(forX: selectedChartData.date) {
+                                       let chartX = chart.position(forX: selectedChartData.date),
+                                       let negativeSpaceBarHeight = chart.position(forY: selectedChartData.value) {
                                         let unitWidth = unitWidth(contentWidth: chartWidth/3)
                                         let chartXOffset = chartX + originX - unitWidth/3
                                         let overlayWidth = unitWidth + 2/3*(unitWidth)
-                                        let visibleChartWidth = unitWidth * CGFloat(dataSource.visibleBarCount)
-
-                                        let visibleChartRect = CGRect(x: 0, y: 0, width: visibleChartWidth, height: chartHeight)
+                                        let visibleChartRect = CGRect(x: 0, y: 0, width: chartGeometry.size.width, height: chartGeometry.size.height)
                                         let overlayRect = CGRect(x: chartXOffset, y: 0, width: overlayWidth, height: 75)
+                                        let scoot = visibleChartRect.scoot(overlayRect)
+                                        let padding: CGFloat = 10
 
-                                        let scoot = { () -> CGSize in
-                                            print("containerRect: \(String(describing: visibleChartRect))")
-                                            print("overlayRect: \(String(describing: overlayRect))")
-                                            var _scoot = visibleChartRect.scoot(overlayRect)
-                                            _scoot.width += chartXOffset
-                                            print("*** scoot: \(String(describing: _scoot))")
-                                            return _scoot
-                                        }()
+                                        ZStack(alignment: .top) {
+                                            Color.black
+                                                .frame(
+                                                    width: 1,
+                                                    height: negativeSpaceBarHeight - padding
+                                                )
+                                                .offset(x: 0, y: padding)
 
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("scoot:\(String(describing: scoot))")
-                                            Text("rect: \(String(describing: visibleChartWidth))")
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("\(selectedChartData.date.formatted(date: .abbreviated, time: .omitted))")
+                                                Text(String(format: "Value: %.2f", selectedChartData.value))
+                                                    .foregroundColor(.red)
+                                            }
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.3)
+                                            .padding(padding)
+                                            .background {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .strokeBorder(Color.black, lineWidth: 2)
+                                                    .background(Color.white.clipShape(RoundedRectangle(cornerRadius: 10)))
+                                            }
+                                            .padding(padding)
+                                            .frame(width: overlayWidth, alignment: .center)
+                                            .offset(x: scoot.width)
                                         }
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.3)
-                                        .padding(10)
-                                        .background {
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .strokeBorder(Color.green, lineWidth: 3)
-                                                .background(Color.yellow.clipShape(RoundedRectangle(cornerRadius: 10)))
-                                        }
-                                        .padding(10)
-                                        .frame(width: overlayWidth, height: 75, alignment: .center)
-                                        .offset(scoot)
+                                        .offset(x: chartXOffset)
                                     }
                                 }
-                            }
-                        }
-                        .chartBackground(alignment: .topLeading) { chart in
-                            interactiveChartContent(chart: chart) { _ in
-                                Color.black
-                                    .frame(
-                                        width: 1,
-                                        height: chart.plotAreaSize.height,
-                                        alignment: .leading
-                                    )
                             }
                         }
                         .animating(changeOf: dataSource.upperBound,
@@ -267,6 +249,7 @@ struct ScrollingBarChart: View {
         .coordinateSpace(name: "Chart")
     }
 
+    // Make Lollipop here
     @ViewBuilder
     private func interactiveChartContent(chart: ChartProxy, @ViewBuilder content: @escaping (ChartData) -> some View) -> some View {
         if let selectedChartData {
