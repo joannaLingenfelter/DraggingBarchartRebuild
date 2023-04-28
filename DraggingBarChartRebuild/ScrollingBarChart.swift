@@ -12,7 +12,9 @@ import Charts
 extension CGRect {
     func scoot(_ rect: CGRect) -> CGSize {
         guard !self.contains(rect),
-              self.intersects(rect) else {
+              self.intersects(rect),
+              self.width >= rect.width,
+              self.height >= rect.height else {
             return .zero
         }
 
@@ -202,22 +204,26 @@ struct ScrollingBarChart: View {
                                         let unitWidth = unitWidth(contentWidth: chartWidth/3)
                                         let chartXOffset = chartX + originX - unitWidth/3
                                         let overlayWidth = unitWidth + 2/3*(unitWidth)
+                                        let visibleChartWidth = unitWidth * CGFloat(dataSource.visibleBarCount)
 
-                                        let visibleChartRect = geometry[chart.plotAreaFrame]
-
-                                        let containerRect = CGRect(x: chartWidth/3, y: 0, width: chartWidth, height: chartHeight)
-                                        let overlayRect = CGRect(x: chartXOffset, y: 0, width: overlayWidth, height: 100)
+                                        let visibleChartRect = CGRect(x: 0, y: 0, width: visibleChartWidth, height: chartHeight)
+                                        let overlayRect = CGRect(x: chartXOffset, y: 0, width: overlayWidth, height: 75)
 
                                         let scoot = { () -> CGSize in
-                                            var _scoot = containerRect.scoot(overlayRect)
+                                            print("containerRect: \(String(describing: visibleChartRect))")
+                                            print("overlayRect: \(String(describing: overlayRect))")
+                                            var _scoot = visibleChartRect.scoot(overlayRect)
                                             _scoot.width += chartXOffset
                                             print("*** scoot: \(String(describing: _scoot))")
                                             return _scoot
                                         }()
 
-                                        Text("scoot:\(String(describing: scoot))\nrect: \(String(describing: visibleChartRect))")
-                                            .frame(width: overlayWidth, height: 100, alignment: .top)
+                                        Text("scoot:\(String(describing: scoot))\nrect: \(String(describing: visibleChartWidth))")
+                                            .minimumScaleFactor(0.3)
+                                            .padding(10)
                                             .background(Color.yellow)
+                                            .padding(10)
+                                            .frame(width: overlayWidth, height: 75, alignment: .center)
                                             .offset(scoot)
                                     }
                                 }
