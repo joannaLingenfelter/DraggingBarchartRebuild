@@ -7,13 +7,17 @@
 
 import Foundation
 
-typealias ChartData = (date: Date, value: Double)
+struct ChartData: Equatable {
+    let date: Date
+    let value: Double
+}
 
 class DataSource: ObservableObject {
     let visibleBarCount: Int = 4
 
     private(set) var upperBound: CGFloat = 0
     private(set) var data: [ChartData] = []
+    private(set) var yAxisMarkValues: [Int] = []
 
     private let calendar = Calendar(identifier: .gregorian)
 
@@ -27,9 +31,10 @@ class DataSource: ObservableObject {
             let startOfToday = calendar.startOfDay(for: .now)
             let date = calendar.date(byAdding: .day, value: totalOffset, to: startOfToday)!
             let value = CGFloat(totalOffset).magnitude * CGFloat(10)
-            return (date: date, value: value)
+            return .init(date: date, value: value)
         }
         upperBound = data[visibleBarCount..<2*visibleBarCount].map(\.value).max() ?? 0
+        yAxisMarkValues = (stride(from: 0, through: upperBound, by: upperBound / 3.0).map { $0 } + [upperBound * 1.25]).map(Int.init)
         objectWillChange.send()
     }
 
@@ -45,4 +50,16 @@ class DataSource: ObservableObject {
         }
         .first
     }
+
+    func visibleData(of data: ChartData?) -> ChartData? {
+        guard let data else { return nil }
+        let isPresent = self.data[visibleBarCount..<2*visibleBarCount].contains { value in
+            value.date == data.date && value.value == data.value
+        }
+        guard isPresent else {
+            return nil
+        }
+        return data
+    }
 }
+

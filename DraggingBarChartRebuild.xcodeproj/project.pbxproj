@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		1709E9D129F847F0009F6ED5 /* View+ConditionalAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1709E9D029F847F0009F6ED5 /* View+ConditionalAnimation.swift */; };
 		1709E9D329F84820009F6ED5 /* DataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1709E9D229F84820009F6ED5 /* DataSource.swift */; };
+		1709E9D52A003B68009F6ED5 /* ScrollingBarChart+LollipopOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1709E9D42A003B68009F6ED5 /* ScrollingBarChart+LollipopOverlay.swift */; };
+		1709E9D72A003B9F009F6ED5 /* CGRect+Translations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1709E9D62A003B9F009F6ED5 /* CGRect+Translations.swift */; };
 		17BA6BA129F306FE00B0EF60 /* DraggingBarChartRebuildApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BA6BA029F306FE00B0EF60 /* DraggingBarChartRebuildApp.swift */; };
 		17BA6BA329F306FE00B0EF60 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BA6BA229F306FE00B0EF60 /* ContentView.swift */; };
 		17BA6BA529F306FF00B0EF60 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17BA6BA429F306FF00B0EF60 /* Assets.xcassets */; };
@@ -20,6 +22,8 @@
 /* Begin PBXFileReference section */
 		1709E9D029F847F0009F6ED5 /* View+ConditionalAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+ConditionalAnimation.swift"; sourceTree = "<group>"; };
 		1709E9D229F84820009F6ED5 /* DataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSource.swift; sourceTree = "<group>"; };
+		1709E9D42A003B68009F6ED5 /* ScrollingBarChart+LollipopOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ScrollingBarChart+LollipopOverlay.swift"; sourceTree = "<group>"; };
+		1709E9D62A003B9F009F6ED5 /* CGRect+Translations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGRect+Translations.swift"; sourceTree = "<group>"; };
 		17BA6B9D29F306FE00B0EF60 /* DraggingBarChartRebuild.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DraggingBarChartRebuild.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		17BA6BA029F306FE00B0EF60 /* DraggingBarChartRebuildApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggingBarChartRebuildApp.swift; sourceTree = "<group>"; };
 		17BA6BA229F306FE00B0EF60 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -62,6 +66,8 @@
 				17BA6BA029F306FE00B0EF60 /* DraggingBarChartRebuildApp.swift */,
 				17BA6BA229F306FE00B0EF60 /* ContentView.swift */,
 				17BA6BAE29F307C800B0EF60 /* ScrollingBarChart.swift */,
+				1709E9D42A003B68009F6ED5 /* ScrollingBarChart+LollipopOverlay.swift */,
+				1709E9D62A003B9F009F6ED5 /* CGRect+Translations.swift */,
 				1709E9D229F84820009F6ED5 /* DataSource.swift */,
 				1709E9D029F847F0009F6ED5 /* View+ConditionalAnimation.swift */,
 				17BA6BB229F30EE000B0EF60 /* View+Measuring.swift */,
@@ -150,7 +156,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				1709E9D329F84820009F6ED5 /* DataSource.swift in Sources */,
+				1709E9D72A003B9F009F6ED5 /* CGRect+Translations.swift in Sources */,
 				1709E9D129F847F0009F6ED5 /* View+ConditionalAnimation.swift in Sources */,
+				1709E9D52A003B68009F6ED5 /* ScrollingBarChart+LollipopOverlay.swift in Sources */,
 				17BA6BB329F30EE000B0EF60 /* View+Measuring.swift in Sources */,
 				17BA6BA329F306FE00B0EF60 /* ContentView.swift in Sources */,
 				17BA6BA129F306FE00B0EF60 /* DraggingBarChartRebuildApp.swift in Sources */,
