@@ -70,21 +70,21 @@ struct ScrollingBarChart: View {
             }
     }
 
-    @ChartContentBuilder
-    func chart(showsAnnotations: Bool) -> some ChartContent {
-        ForEach(dataSource.data, id: \.date) { item in
+
+    var chart: some ChartContent {
+        ForEach(dataSource.data) { item in
             BarMark(
                 x: .value("Day", item.date, unit: .day),
                 y: .value("Value", min(item.value, animatedUpperBound)),
-                width: .fixed(barWidth),
-                stacking: .unstacked
+                width: .fixed(barWidth)
             )
+            .foregroundStyle(by: .value("Day", item.date, unit: .day))
         }
     }
 
     private var chartYAxis: some View {
         Chart {
-            chart(showsAnnotations: false)
+            chart
         }
         .chartYScale(domain: 0 ... artificialUpperBound)
         .foregroundStyle(.clear)
@@ -111,7 +111,7 @@ struct ScrollingBarChart: View {
                 GeometryReader { chartGeometry in
                     ScrollView(.horizontal) {
                         Chart {
-                            chart(showsAnnotations: true)
+                            chart
                         }
                         .chartYScale(domain: 0 ... artificialUpperBound)
                         .chartXAxis {
