@@ -43,7 +43,7 @@ extension ScrollingBarChart {
                         y: overlayGeometry.line.midY
                     )
 
-                VStack(alignment: .center) {
+                VStack(alignment: .leading) {
                     Text("\(selectedChartData.date, format: .dateTime.year().month().day())")
                         .font(.callout)
                         .foregroundStyle(.secondary)
