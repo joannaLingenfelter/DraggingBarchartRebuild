@@ -25,7 +25,7 @@ struct ScrollingBarChart: View {
     private var animatedUpperBound: CGFloat = .zero
 
     @State
-    private var selectedChartData: ChartData?
+    private var selectedChartData: Payment?
 
     @GestureState
     private var translation: CGFloat = .zero
@@ -72,19 +72,41 @@ struct ScrollingBarChart: View {
 
 
     var chart: some ChartContent {
-        ForEach(dataSource.data) { item in
-            BarMark(
-                x: .value("Day", item.date, unit: .day),
-                y: .value("Value", min(item.value, animatedUpperBound)),
-                width: .fixed(barWidth)
-            )
-            .foregroundStyle(by: .value("Day", item.date, unit: .day))
+        ForEach(dataSource.data) { payment in
+//            BarMark(
+//                x: .value("Month", payment.dueDate, unit: .month),
+//                y: .value("Value", min(payment.totalPaymentAmount, animatedUpperBound)),
+//                width: .fixed(barWidth)
+//            )
+            ForEach(payment.plans) { plan in
+                BarMark(
+                    x: .value("Day", payment.dueDate, unit: .month),
+                    y: .value("Value", min(plan.minimumMonthlyPaymentAmount, animatedUpperBound)),
+                    width: .fixed(barWidth),
+                    stacking: .standard
+                )
+                .foregroundStyle(by: .value("Plan Name", plan.name))
+            }
         }
     }
 
     private var chartYAxis: some View {
         Chart {
-            chart
+            ForEach(dataSource.data) { payment in
+    //            BarMark(
+    //                x: .value("Month", payment.dueDate, unit: .month),
+    //                y: .value("Value", min(payment.totalPaymentAmount, animatedUpperBound)),
+    //                width: .fixed(barWidth)
+    //            )
+                ForEach(payment.plans) { plan in
+                    BarMark(
+                        x: .value("Day", payment.dueDate, unit: .month),
+                        y: .value("Value", min(plan.minimumMonthlyPaymentAmount, animatedUpperBound)),
+                        width: .fixed(barWidth),
+                        stacking: .standard
+                    )
+                }
+            }
         }
         .chartYScale(domain: 0 ... artificialUpperBound)
         .foregroundStyle(.clear)
@@ -103,7 +125,7 @@ struct ScrollingBarChart: View {
     private var isLollipopVisible = false
 
     @State
-    private var animatedSelectedContent: ChartData?
+    private var animatedSelectedContent: Payment?
 
     var body: some View {
         GeometryReader { containerGeometry in
@@ -116,9 +138,9 @@ struct ScrollingBarChart: View {
                         .chartYScale(domain: 0 ... artificialUpperBound)
                         .chartXAxis {
                             AxisMarks(
-                                format: .dateTime.weekday().locale(locale),
+                                format: .dateTime.month().locale(locale),
                                 preset: .extended,
-                                values: .stride(by: .day)
+                                values: .stride(by: .month)
                             )
                         }
                         .chartYAxis {
@@ -135,6 +157,7 @@ struct ScrollingBarChart: View {
                             width: chartGeometry.size.width * 3,
                             height: containerGeometry.size.height
                         )
+                        .chartLegend(alignment:.center)
                         .chartOverlay(alignment: .topLeading) { chart in
                             GeometryReader { geometry in
                                 Color.clear

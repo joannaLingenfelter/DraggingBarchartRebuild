@@ -10,14 +10,14 @@ import Charts
 
 extension ScrollingBarChart {
     struct LollipopOverlay: View {
-        let selectedChartData: ChartData
+        let selectedChartData: Payment
         let chart: ChartProxy
         let containerSize: CGSize
         let unitWidth: CGFloat
 
         var body: some View {
             GeometryReader { geo in
-                let valuePosition = chart.position(for: (x: selectedChartData.date, y: selectedChartData.value)) ?? .zero
+                let valuePosition = chart.position(for: (x: selectedChartData.dueDate, y: selectedChartData.totalPaymentAmount)) ?? .zero
 
                 let boxCornerRadius: CGFloat = 8.0
 
@@ -44,10 +44,10 @@ extension ScrollingBarChart {
                     )
 
                 VStack(alignment: .leading) {
-                    Text("\(selectedChartData.date, format: .dateTime.year().month().day())")
+                    Text("\(selectedChartData.dueDate, format: .dateTime.year().month().day())")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                    Text("\(selectedChartData.value, format: .number)")
+                    Text("\(selectedChartData.totalPaymentAmount, format: .number)")
                         .font(.title2.bold())
                         .foregroundColor(.primary)
                 }
