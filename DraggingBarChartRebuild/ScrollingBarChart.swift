@@ -9,6 +9,16 @@
 import SwiftUI
 import Charts
 
+//extension ChartContent {
+//    func foregroundStyle<D: Plottable>(by value: PlottableValue<D>?) -> some ChartContent {
+//        if let value {
+//            return self.foregroundStyle(by: value)
+//        }
+//
+//        return self
+//    }
+//}
+
 struct ScrollingBarChart: View {
     @Environment(\.locale) private var locale
 
@@ -71,42 +81,31 @@ struct ScrollingBarChart: View {
     }
 
 
-    var chart: some ChartContent {
+    @ChartContentBuilder
+    func chart(showsBars: Bool) -> some ChartContent {
         ForEach(dataSource.data) { payment in
-//            BarMark(
-//                x: .value("Month", payment.dueDate, unit: .month),
-//                y: .value("Value", min(payment.totalPaymentAmount, animatedUpperBound)),
-//                width: .fixed(barWidth)
-//            )
             ForEach(payment.plans) { plan in
-                BarMark(
+
+                let barMark = BarMark(
                     x: .value("Day", payment.dueDate, unit: .month),
                     y: .value("Value", min(plan.minimumMonthlyPaymentAmount, animatedUpperBound)),
                     width: .fixed(barWidth),
                     stacking: .standard
                 )
-                .foregroundStyle(by: .value("Plan Name", plan.name))
+
+                if showsBars {
+                    barMark
+                        .foregroundStyle(by: .value("Plan Name", plan.name))
+                } else {
+                    barMark
+                }
             }
         }
     }
 
     private var chartYAxis: some View {
         Chart {
-            ForEach(dataSource.data) { payment in
-    //            BarMark(
-    //                x: .value("Month", payment.dueDate, unit: .month),
-    //                y: .value("Value", min(payment.totalPaymentAmount, animatedUpperBound)),
-    //                width: .fixed(barWidth)
-    //            )
-                ForEach(payment.plans) { plan in
-                    BarMark(
-                        x: .value("Day", payment.dueDate, unit: .month),
-                        y: .value("Value", min(plan.minimumMonthlyPaymentAmount, animatedUpperBound)),
-                        width: .fixed(barWidth),
-                        stacking: .standard
-                    )
-                }
-            }
+            chart(showsBars: false)
         }
         .chartYScale(domain: 0 ... artificialUpperBound)
         .foregroundStyle(.clear)
@@ -133,7 +132,7 @@ struct ScrollingBarChart: View {
                 GeometryReader { chartGeometry in
                     ScrollView(.horizontal) {
                         Chart {
-                            chart
+                            chart(showsBars: true)
                         }
                         .chartYScale(domain: 0 ... artificialUpperBound)
                         .chartXAxis {

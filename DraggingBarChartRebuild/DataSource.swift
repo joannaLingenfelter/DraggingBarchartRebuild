@@ -47,11 +47,12 @@ class DataSource: ObservableObject {
             let totalOffset = i + offset
             let startOfToday = calendar.startOfDay(for: .now)
             let paymentDueDate = calendar.date(byAdding: .month, value: totalOffset, to: startOfToday)!
-            //let dueDate = calendar.date(byAdding: .day, value: totalOffset, to: startOfToday)!
-            let numberOfPlans = Int.random(in: 1...5)
+
+            let value = CGFloat(totalOffset).magnitude * CGFloat(10)
+            let numberOfPlans = min(totalOffset.magnitude, 5)
             var plans: [Plan] = []
-            for i in 0..<numberOfPlans {
-                let minimumAmount = Double.random(in: 50...150)
+            for i in 0...numberOfPlans {
+                let minimumAmount = CGFloat(totalOffset).magnitude * CGFloat(10) + CGFloat(25.0 * CGFloat(i))
                 var paymentDueDates: [Date] {
                     let date1 = paymentDueDate
                     let date2 = calendar.date(byAdding: .month, value: offset, to: date1)!
@@ -68,6 +69,7 @@ class DataSource: ObservableObject {
             return .init(dueDate: paymentDueDate, plans: plans)
         }
         upperBound = data[visibleBarCount..<2*visibleBarCount].map(\.totalPaymentAmount).max() ?? 0
+        print("***upper bound: \(upperBound)")
         yAxisMarkValues = (stride(from: 0, through: upperBound, by: upperBound / 3.0).map { $0 } + [upperBound * 1.25]).map(Int.init)
         objectWillChange.send()
     }
