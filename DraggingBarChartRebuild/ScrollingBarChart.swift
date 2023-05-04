@@ -37,36 +37,46 @@ struct ScrollingBarChart: View {
         Int(animatedUpperBound * 1.5)
     }
 
-    private func dragGesture(contentWidth: CGFloat) -> some Gesture {
+    private func dragGesture(contentWidth: CGFloat, chart: ChartProxy, containerGeometry: GeometryProxy) -> some Gesture {
         DragGesture(minimumDistance: 0.5)
             .updating($translation) { value, state, _ in
                 state = value.translation.width
             }
             .onEnded { value in
                 chartContentOffset += value.translation.width
+                print("*** chartContentOffset: \(chartContentOffset)")
 
-                let barCount = Double(dataSource.visibleBarCount)
-                let unitWidth = contentWidth / barCount
+                let chartOriginX = containerGeometry[chart.plotAreaFrame].origin.x
+                print("*** originX: \(chartOriginX)")
 
-                let unitOffset = (value.translation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
-                var predictedUnitOffset = (value.predictedEndTranslation.width / unitWidth).rounded(.toNearestOrAwayFromZero)
+                let containerOriginX = -chartOriginX
+                print("*** containerOriginX: \(containerOriginX)")
 
-                predictedUnitOffset = max(-barCount, min(barCount, predictedUnitOffset))
+                let clampedOriginX = min(containerOriginX, chart.plotAreaSize.width - contentWidth)
+                print("*** clampedOriginX: \(clampedOriginX)")
+
+                let leadingXValue = chart.value(atX: clampedOriginX, as: Date.self)!
+                print("*** leadingXValue: \(leadingXValue.formatted(date: .abbreviated, time: .omitted))")
+
+                let chartData = dataSource.indexOfDate(closestTo: leadingXValue)!
+                print("*** chartData: \(chartData.date.formatted(date: .abbreviated, time: .omitted))")
+
+                let chartPosition = chart.position(forX: chartData.date)!
+                print("*** chartPosition: \(chartPosition)")
+
+                let finalOffset = -chartPosition
+
 
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
-                    if predictedUnitOffset.magnitude >= Double(dataSource.visibleBarCount) {
-                        chartContentOffset = predictedUnitOffset * unitWidth
-                    } else {
-                        chartContentOffset = unitOffset * unitWidth
-                    }
+                    chartContentOffset = finalOffset
                 }
 
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(pagingAnimationDuration))
-                    currentUnitOffset -= Int(chartContentOffset / unitWidth)
-                    dataSource.setUnitOffset(currentUnitOffset)
-                    chartContentOffset = 0
-                }
+//                Task { @MainActor in
+//                    try? await Task.sleep(for: .seconds(pagingAnimationDuration))
+//                    currentUnitOffset -= Int(chartContentOffset / unitWidth)
+//                    dataSource.setUnitOffset(currentUnitOffset)
+//                    chartContentOffset = 0
+//                }
             }
     }
 
@@ -79,6 +89,11 @@ struct ScrollingBarChart: View {
                 width: .fixed(barWidth),
                 stacking: .unstacked
             )
+            .annotation {
+                if showsAnnotations {
+                    Text(item.date.formatted(date: .abbreviated, time: .omitted))
+                }
+            }
         }
     }
 
@@ -129,7 +144,7 @@ struct ScrollingBarChart: View {
                                 AxisGridLine()
                             }
                         }
-                        .offset(x: chartContentOffset - chartGeometry.size.width)
+                        .offset(x: chartContentOffset)
                         .offset(x: translation)
                         .frame(
                             width: chartGeometry.size.width * 3,
@@ -157,7 +172,7 @@ struct ScrollingBarChart: View {
                                             }
                                         }
                                     }
-                                    .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width))
+                                    .simultaneousGesture(dragGesture(contentWidth: chartGeometry.size.width, chart: chart, containerGeometry: geometry))
                             }
                         }
                         .chartOverlay { chart in
