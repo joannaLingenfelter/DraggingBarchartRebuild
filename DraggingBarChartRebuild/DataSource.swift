@@ -38,7 +38,7 @@ class DataSource: ObservableObject {
         objectWillChange.send()
     }
 
-    func indexOfDate(closestTo date: Date) -> ChartData? {
+    func chartData(closestTo date: Date) -> ChartData? {
         data.sorted { lhs, rhs in
             if calendar.isDate(date, inSameDayAs: lhs.date) {
                 return true

@@ -58,7 +58,7 @@ struct ScrollingBarChart: View {
                 let leadingXValue = chart.value(atX: clampedOriginX, as: Date.self)!
                 print("*** leadingXValue: \(leadingXValue.formatted(date: .abbreviated, time: .omitted))")
 
-                let chartData = dataSource.indexOfDate(closestTo: leadingXValue)!
+                let chartData = dataSource.chartData(closestTo: leadingXValue)!
                 print("*** chartData: \(chartData.date.formatted(date: .abbreviated, time: .omitted))")
 
                 let chartPosition = chart.position(forX: chartData.date)!
@@ -160,7 +160,7 @@ struct ScrollingBarChart: View {
                                         let currentX = clampedLocationX - originX
 
                                         if let selectedDate = chart.value(atX: currentX, as: Date.self),
-                                           let selectedBar = dataSource.indexOfDate(closestTo: selectedDate) {
+                                           let selectedBar = dataSource.chartData(closestTo: selectedDate) {
                                             if let selectedChartData {
                                                 if selectedBar == selectedChartData {
                                                     self.selectedChartData = nil
