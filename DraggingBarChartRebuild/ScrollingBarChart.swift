@@ -68,7 +68,7 @@ struct ScrollingBarChart: View {
                 let chartPosition = chart.position(forX: chartData.date)!
                 print("*** chartPosition: \(chartPosition)")
 
-                let finalOffset = -chartPosition
+                let finalOffset = -chartPosition + contentWidth
 
 
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
@@ -93,12 +93,12 @@ struct ScrollingBarChart: View {
                 width: .fixed(barWidth),
                 stacking: .unstacked
             )
-//            .annotation {
-//                if showsAnnotations {
-//                    Text(item.date.formatted(date: .abbreviated, time: .omitted))
-//                        .foregroundColor(item.isVirtual ? .orange : .black)
-//                }
-//            }
+            .annotation {
+                if showsAnnotations {
+                    Text(item.date.formatted(.dateTime.month().day()))
+                        .foregroundColor(item.isVirtual ? .orange : .black)
+                }
+            }
         }
     }
 
