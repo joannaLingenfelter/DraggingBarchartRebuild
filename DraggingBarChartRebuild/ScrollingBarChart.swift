@@ -25,7 +25,11 @@ struct ScrollingBarChart: View {
     private var animatedUpperBound: CGFloat = .zero
 
     @State
-    private var selectedChartData: ChartData?
+    private var selectedChartData: ChartData? {
+        didSet {
+            print("selectedData: \(selectedChartData)")
+        }
+    }
 
     @GestureState
     private var translation: CGFloat = .zero
@@ -177,12 +181,10 @@ struct ScrollingBarChart: View {
                         }
                         .chartOverlay { chart in
                             if let selectedChartData = dataSource.visibleData(of: animatedSelectedContent) {
-                                let unitWidth = unitWidth(contentWidth: chartGeometry.size.width)
                                 LollipopOverlay(
                                     selectedChartData: selectedChartData,
                                     chart: chart,
-                                    containerSize: chartGeometry.size,
-                                    unitWidth: unitWidth
+                                    containerSize: chartGeometry.size
                                 )
                                 .opacity(isLollipopVisible ? 1.0 : 0.0)
                             }

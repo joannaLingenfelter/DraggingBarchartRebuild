@@ -13,10 +13,9 @@ extension ScrollingBarChart {
         let selectedChartData: ChartData
         let chart: ChartProxy
         let containerSize: CGSize
-        let unitWidth: CGFloat
 
         var body: some View {
-            GeometryReader { geo in
+            GeometryReader { geometry in
                 let valuePosition = chart.position(for: (x: selectedChartData.date, y: selectedChartData.value)) ?? .zero
 
                 let boxCornerRadius: CGFloat = 8.0
@@ -28,9 +27,9 @@ extension ScrollingBarChart {
 
                 let overlayGeometry = OverlayGeometry(valuePosition: valuePosition,
                                                       visibleBounds: visibleBounds,
-                                                      unitWidth: unitWidth,
+                                                      unitWidth: containerSize.width/4,
                                                       cornerRadius: boxCornerRadius,
-                                                      chartFrame: geo[chart.plotAreaFrame])
+                                                      chartFrame: geometry[chart.plotAreaFrame])
                 Rectangle()
                     .fill(.red)
                     .frame(

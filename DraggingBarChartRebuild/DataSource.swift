@@ -22,20 +22,44 @@ class DataSource: ObservableObject {
     private let calendar = Calendar(identifier: .gregorian)
 
     init() {
-        setUnitOffset(0)
+        setDataOffset(0)
     }
 
-    func setUnitOffset(_ offset: Int) {
-        data = (-visibleBarCount..<(2*visibleBarCount)).map { i -> ChartData in
+    func setDataOffset(_ offset: ChartData?) {
+        guard let index = indexOfChartData(offset) else {
+            return
+        }
+
+        if let offset = offset {
+
+        } else {
+            let offset = 0
+        }
+
+        data = (0..<(3*visibleBarCount)).map { i -> ChartData in
             let totalOffset = i + offset
             let startOfToday = calendar.startOfDay(for: .now)
             let date = calendar.date(byAdding: .day, value: totalOffset, to: startOfToday)!
             let value = CGFloat(totalOffset).magnitude * CGFloat(10)
             return .init(date: date, value: value)
         }
-        upperBound = data[visibleBarCount..<2*visibleBarCount].map(\.value).max() ?? 0
+        upperBound = data[0..<visibleBarCount].map(\.value).max() ?? 0
         yAxisMarkValues = (stride(from: 0, through: upperBound, by: upperBound / 3.0).map { $0 } + [upperBound * 1.25]).map(Int.init)
         objectWillChange.send()
+    }
+
+    private func data(for offset: Int) -> [ChartData] {
+        (0..<(3*visibleBarCount)).map { i -> ChartData in
+            let totalOffset = i + offset
+            let startOfToday = calendar.startOfDay(for: .now)
+            let date = calendar.date(byAdding: .day, value: totalOffset, to: startOfToday)!
+            let value = CGFloat(totalOffset).magnitude * CGFloat(10)
+            return .init(date: date, value: value)
+        }
+    }
+
+    private func indexOfChartData(_ data: ChartData) -> Int? {
+        self.data.firstIndex(of: data)
     }
 
     func chartData(closestTo date: Date) -> ChartData? {
@@ -53,7 +77,7 @@ class DataSource: ObservableObject {
 
     func visibleData(of data: ChartData?) -> ChartData? {
         guard let data else { return nil }
-        let isPresent = self.data[visibleBarCount..<2*visibleBarCount].contains { value in
+        let isPresent = self.data[0..<3*visibleBarCount].contains { value in
             value.date == data.date && value.value == data.value
         }
         guard isPresent else {
