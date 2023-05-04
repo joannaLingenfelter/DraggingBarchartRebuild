@@ -75,12 +75,12 @@ struct ScrollingBarChart: View {
                     chartContentOffset = finalOffset
                 }
 
-//                Task { @MainActor in
-//                    try? await Task.sleep(for: .seconds(pagingAnimationDuration))
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(pagingAnimationDuration))
 //                    currentUnitOffset -= Int(chartContentOffset / unitWidth)
-//                    dataSource.setUnitOffset(currentUnitOffset)
-//                    chartContentOffset = 0
-//                }
+                    dataSource.setLeadingVisibleData(chartData)
+                    chartContentOffset = 0
+                }
             }
     }
 
@@ -93,11 +93,12 @@ struct ScrollingBarChart: View {
                 width: .fixed(barWidth),
                 stacking: .unstacked
             )
-            .annotation {
-                if showsAnnotations {
-                    Text(item.date.formatted(date: .abbreviated, time: .omitted))
-                }
-            }
+//            .annotation {
+//                if showsAnnotations {
+//                    Text(item.date.formatted(date: .abbreviated, time: .omitted))
+//                        .foregroundColor(item.isVirtual ? .orange : .black)
+//                }
+//            }
         }
     }
 
@@ -148,7 +149,7 @@ struct ScrollingBarChart: View {
                                 AxisGridLine()
                             }
                         }
-                        .offset(x: chartContentOffset)
+                        .offset(x: chartContentOffset - chartGeometry.size.width)
                         .offset(x: translation)
                         .frame(
                             width: chartGeometry.size.width * 3,
@@ -217,10 +218,6 @@ struct ScrollingBarChart: View {
             }
             .frame(height: containerGeometry.size.height)
         }
-    }
-
-    private func unitWidth(contentWidth: CGFloat) -> CGFloat {
-        contentWidth / Double(dataSource.visibleBarCount)
     }
 }
 
