@@ -42,7 +42,7 @@ struct ScrollingBarChart: View {
     }
 
     private func dragGesture(contentWidth: CGFloat, chart: ChartProxy, containerGeometry: GeometryProxy) -> some Gesture {
-        DragGesture(minimumDistance: 0.5)
+        DragGesture()
             .updating($translation) { value, state, _ in
                 state = value.translation.width
             }
@@ -69,7 +69,7 @@ struct ScrollingBarChart: View {
                 print("*** chartPosition: \(chartPosition)")
 
                 let finalOffset = -chartPosition + contentWidth
-
+                print("*** finalOffset: \(finalOffset)")
 
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
                     chartContentOffset = finalOffset
@@ -77,7 +77,6 @@ struct ScrollingBarChart: View {
 
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(pagingAnimationDuration))
-//                    currentUnitOffset -= Int(chartContentOffset / unitWidth)
                     dataSource.setLeadingVisibleData(chartData)
                     chartContentOffset = 0
                 }
@@ -86,7 +85,7 @@ struct ScrollingBarChart: View {
 
     @ChartContentBuilder
     func chart(showsAnnotations: Bool) -> some ChartContent {
-        ForEach(dataSource.data, id: \.date) { item in
+        ForEach(dataSource.slicedData, id: \.date) { item in
             BarMark(
                 x: .value("Day", item.date, unit: .day),
                 y: .value("Value", min(item.value, animatedUpperBound)),
@@ -95,8 +94,11 @@ struct ScrollingBarChart: View {
             )
             .annotation {
                 if showsAnnotations {
-                    Text(item.date.formatted(.dateTime.month().day()))
-                        .foregroundColor(item.isVirtual ? .orange : .black)
+                    VStack(alignment: .leading) {
+                        Text(item.date.formatted(.dateTime.month().day()))
+                            .foregroundColor(item.isVirtual ? .orange : .black)
+                        Text(String(format: "%.2f", item.value))
+                    }
                 }
             }
         }

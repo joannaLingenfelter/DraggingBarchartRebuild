@@ -64,25 +64,28 @@ class DataSource: ObservableObject {
         print("***    - data.count: \(slicedData.count)")
 
         let filteredSlicedData = slicedData.filter { !$0.isVirtual }
-        print("*** unpadded.count: \(filteredSlicedData.count)")
+        print("*** - filteredSlicedData: \(slicedData.map { $0.date.formatted(.dateTime.month().day())})")
 
-        let paddingCount = slicedData.count - filteredSlicedData.count
-        print("*** paddingCount: \(paddingCount)")
-
-        let paddedIndex = index + paddingCount
-        print("*** paddedIndex: \(index)")
 
         let offSet = Int(index % filteredSlicedData.count)
         print("*** offSet: \(offSet)")
-        let clampedOffset = min(offSet, ((visibleBarCount * 2) - 1))
-        let clampedUpperBound = min(clampedOffset + visibleBarCount, filteredSlicedData.count - 1)
-        let adjustedIndex = index < filteredSlicedData.count ? index : index - offSet
-        print("*** adjustedIndex: \(adjustedIndex)")
 
-        let visibleData = slicedData.filter { !$0.isVirtual }[clampedOffset..<clampedUpperBound]
+        let clampedOffset = min(offSet, ((visibleBarCount * 2) - 1))
+        print("*** clampedOffset: \(clampedOffset)")
+
+        let clampedUpperBound = min(clampedOffset + visibleBarCount, filteredSlicedData.count - 1)
+        print("*** clampedUpperBound: \(clampedUpperBound)")
+
+        let visibleDataRange = clampedOffset..<clampedUpperBound
+        let visibleData = slicedData.filter { !$0.isVirtual }[visibleDataRange]
         print("*** - visibleData: \(visibleData.map { $0.date.formatted(.dateTime.month().day())})")
-        upperBound = visibleData.map(\.value).max() ?? .zero
+
+        let calculatedUpperBound = visibleData.map(\.value).max() ?? .zero
+
+        // Layout warning happens even when this is commented out
+        upperBound = calculatedUpperBound
         print("***    - upperBound: \(upperBound)")
+
         objectWillChange.send()
     }
 
