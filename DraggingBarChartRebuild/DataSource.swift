@@ -20,7 +20,6 @@ class DataSource: ObservableObject {
 
     private(set) var upperBound: CGFloat = 0
     private(set) var slicedData: [ChartData] = []
-//    private(set) var yAxisMarkValues: [Int] = []
 
     private static let calendar = Calendar(identifier: .gregorian)
 
@@ -63,24 +62,7 @@ class DataSource: ObservableObject {
         }
         print("***    - data.count: \(slicedData.count)")
 
-        let filteredSlicedData = slicedData.filter { !$0.isVirtual }
-        print("*** - filteredSlicedData: \(slicedData.map { $0.date.formatted(.dateTime.month().day())})")
-
-
-        let offSet = Int(index % filteredSlicedData.count)
-        print("*** offSet: \(offSet)")
-
-        let clampedOffset = min(offSet, ((visibleBarCount * 2) - 1))
-        print("*** clampedOffset: \(clampedOffset)")
-
-        let clampedUpperBound = min(clampedOffset + visibleBarCount, filteredSlicedData.count - 1)
-        print("*** clampedUpperBound: \(clampedUpperBound)")
-
-        let visibleDataRange = clampedOffset..<clampedUpperBound
-        let visibleData = slicedData.filter { !$0.isVirtual }[visibleDataRange]
-        print("*** - visibleData: \(visibleData.map { $0.date.formatted(.dateTime.month().day())})")
-
-        let calculatedUpperBound = visibleData.map(\.value).max() ?? .zero
+        let calculatedUpperBound = slicedData.filter { !$0.isVirtual }.map(\.value).max() ?? .zero
 
         // Layout warning happens even when this is commented out
         upperBound = calculatedUpperBound
@@ -111,6 +93,16 @@ class DataSource: ObservableObject {
             return nil
         }
         return data
+    }
+
+    func leadingEdgeLastAvailableDate() -> ChartData? {
+        guard let lastIndex = self.allData.indices.last else {
+            return nil
+        }
+        guard let leadingLastIndex = self.allData.index(lastIndex, offsetBy: -visibleBarCount + 1, limitedBy: 0) else {
+            return nil
+        }
+        return self.allData[leadingLastIndex]
     }
 }
 

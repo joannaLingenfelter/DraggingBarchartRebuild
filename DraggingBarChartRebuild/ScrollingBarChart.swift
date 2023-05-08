@@ -68,7 +68,16 @@ struct ScrollingBarChart: View {
                 let chartPosition = chart.position(forX: chartData.date)!
                 print("*** chartPosition: \(chartPosition)")
 
-                let finalOffset = -chartPosition + contentWidth
+                let lastChartData = dataSource.leadingEdgeLastAvailableDate()!
+                let lastDataChartPosition = chart.position(forX: lastChartData.date)!
+                let clampedChartPosition = min(chartPosition, lastDataChartPosition)
+
+                let finalLeadingEdgeChartData = chart.value(atX: clampedChartPosition, as: Date.self)!
+                let finalLeadingEdgeData = dataSource.chartData(closestTo: finalLeadingEdgeChartData)!
+                print("*** finalLeadingEdgeChartData: \(finalLeadingEdgeData.date.formatted(date: .abbreviated, time: .omitted))")
+                print("*** finalLeadingEdgeData: \(finalLeadingEdgeData.date.formatted(date: .abbreviated, time: .omitted))")
+
+                let finalOffset = -clampedChartPosition + contentWidth
                 print("*** finalOffset: \(finalOffset)")
 
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
