@@ -30,7 +30,7 @@ class DataSource: ObservableObject {
     init() {
         allData = (0 ..< 24).map { offset -> ChartData in
             let startOfToday = DataSource.calendar.startOfDay(for: .now)
-            let date = DataSource.calendar.date(byAdding: .day, value: offset, to: startOfToday)!
+            let date = DataSource.calendar.date(byAdding: .month, value: offset, to: startOfToday)!
             let value = CGFloat(offset).magnitude * CGFloat(10)
             return .init(date: date, value: value)
         }
@@ -56,7 +56,7 @@ class DataSource: ObservableObject {
             } else {
                 print("*** No match: \(index)")
                 let startOfToday = DataSource.calendar.startOfDay(for: .now)
-                let date = DataSource.calendar.date(byAdding: .day, value: index, to: startOfToday)!
+                let date = DataSource.calendar.date(byAdding: .month, value: index, to: startOfToday)!
                 return ChartData(date: date, value: 0.0, isVirtual: true)
             }
         }
