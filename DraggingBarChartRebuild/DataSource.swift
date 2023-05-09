@@ -27,10 +27,19 @@ class DataSource: ObservableObject {
         DataSource.calendar
     }
 
+    private static var startOfCurrentMonth: Date {
+        let firstOfMonthComponents = DateComponents(day: 1, hour: 0)
+        let startOfMonth = DataSource.calendar.nextDate(after: .now,
+                                                        matching: firstOfMonthComponents,
+                                                        matchingPolicy: .nextTime,
+                                                        direction: .backward)!
+        return startOfMonth
+    }
+
     init() {
         allData = (0 ..< 24).map { offset -> ChartData in
-            let startOfToday = DataSource.calendar.startOfDay(for: .now)
-            let date = DataSource.calendar.date(byAdding: .month, value: offset, to: startOfToday)!
+            let startOfMonth = DataSource.startOfCurrentMonth
+            let date = DataSource.calendar.date(byAdding: .month, value: offset, to: startOfMonth)!
             let value = CGFloat(offset).magnitude * CGFloat(10)
             return .init(date: date, value: value)
         }
@@ -55,8 +64,8 @@ class DataSource: ObservableObject {
                 return allData[index]
             } else {
                 print("*** No match: \(index)")
-                let startOfToday = DataSource.calendar.startOfDay(for: .now)
-                let date = DataSource.calendar.date(byAdding: .month, value: index, to: startOfToday)!
+                let startOfMonth = DataSource.startOfCurrentMonth
+                let date = DataSource.calendar.date(byAdding: .month, value: index, to: startOfMonth)!
                 return ChartData(date: date, value: 0.0, isVirtual: true)
             }
         }
@@ -73,12 +82,15 @@ class DataSource: ObservableObject {
 
     func chartData(closestTo date: Date) -> ChartData? {
         allData.sorted { lhs, rhs in
-            if calendar.isDate(date, inSameDayAs: lhs.date) {
+            if calendar.isDate(date, equalTo: lhs.date, toGranularity: .month) {
                 return true
-            } else if calendar.isDate(date, inSameDayAs: rhs.date) {
+            } else if calendar.isDate(date, equalTo: rhs.date, toGranularity: .month) {
                 return false
             } else {
-                return lhs.date.timeIntervalSince(date).magnitude < rhs.date.timeIntervalSince(date).magnitude
+                let comparison = calendar.compare(lhs.date,
+                                                  to: rhs.date,
+                                                  toGranularity: .nanosecond)
+                return comparison == .orderedAscending
             }
         }
         .first

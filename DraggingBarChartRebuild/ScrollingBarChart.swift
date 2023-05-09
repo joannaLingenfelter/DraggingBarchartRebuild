@@ -142,8 +142,6 @@ struct ScrollingBarChart: View {
                                 preset: .extended,
                                 values: .stride(by: .month)
                             )
-
-
                         }
                         .chartYAxis {
                             AxisMarks(
