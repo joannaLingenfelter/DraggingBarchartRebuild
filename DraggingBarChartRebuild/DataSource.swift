@@ -47,37 +47,37 @@ class DataSource: ObservableObject {
     }
 
     func setLeadingVisibleData(_ initialData: ChartData) {
-        print("*** setLeadingVisibleData:")
-        print("***    - initial: \(initialData.date.formatted(.dateTime.day().month().year()))")
+//        print("*** setLeadingVisibleData:")
+//        print("***    - initial: \(initialData.date.formatted(.dateTime.day().month().year()))")
 
         guard let index = self.allData.firstIndex(of: initialData) else {
             return
         }
-        print("***    - index: \(index)")
+//        print("***    - index: \(index)")
         let desiredRange = (index - visibleBarCount) ..< (index + 2 * visibleBarCount)
 
-        print("***    - desiredRange: \(desiredRange)")
+//        print("***    - desiredRange: \(desiredRange)")
 
         slicedData = desiredRange.map { index in
             if allData.indices.contains(index) {
-                print("*** Got a match: \(index)")
+//                print("*** Got a match: \(index)")
                 return allData[index]
             } else {
-                print("*** No match: \(index)")
+//                print("*** No match: \(index)")
                 let startOfMonth = DataSource.startOfCurrentMonth
                 let date = DataSource.calendar.date(byAdding: .month, value: index, to: startOfMonth)!
                 return ChartData(date: date, value: 0.0, isVirtual: true)
             }
         }
-        print("***    - data.count: \(slicedData.count)")
+//        print("***    - data.count: \(slicedData.count)")
 
         let calculatedUpperBound = slicedData.filter { !$0.isVirtual }.map(\.value).max() ?? .zero
 
         // Layout warning happens even when this is commented out
         upperBound = calculatedUpperBound
-        print("***    - upperBound: \(upperBound)")
+//        print("***    - upperBound: \(upperBound)")
 
-        objectWillChange.send()
+//        objectWillChange.send()
     }
 
     func chartData(closestTo date: Date, granularity: Calendar.Component = .month) -> ChartData? {
@@ -91,7 +91,8 @@ class DataSource: ObservableObject {
 
     func visibleData(of data: ChartData?) -> ChartData? {
         guard let data else { return nil }
-        let isPresent = self.slicedData.contains { value in
+        let visibleSlice = slicedData[visibleBarCount ... (visibleBarCount * 2)]
+        let isPresent = visibleSlice.contains { value in
             value.date == data.date && value.value == data.value
         }
         guard isPresent else {

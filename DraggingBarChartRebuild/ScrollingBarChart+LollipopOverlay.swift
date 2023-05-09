@@ -14,6 +14,9 @@ extension ScrollingBarChart {
         let chart: ChartProxy
         let containerSize: CGSize
 
+        @State
+        private var isLineVisible = true
+
         var body: some View {
             GeometryReader { geometry in
                 let valuePosition = chart.position(for: (x: selectedChartData.date, y: selectedChartData.value)) ?? .zero
@@ -41,7 +44,16 @@ extension ScrollingBarChart {
                         x: overlayGeometry.line.midX,
                         y: overlayGeometry.line.midY
                     )
+                    .onChange(of: overlayGeometry.line.midX) { newValue in
+                        let isVisible = (visibleBounds.minX ... visibleBounds.maxX).contains(newValue)
+                        if isVisible != isLineVisible {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7, blendDuration: 0.4)) {
+                                isLineVisible = isVisible
+                            }
+                        }
+                    }
 
+                let boxScale = isLineVisible ? 1.0 : 0.2
                 VStack(alignment: .center) {
                     Text("\(selectedChartData.date, format: .dateTime.year().month().day())")
                         .font(.callout)
@@ -67,10 +79,14 @@ extension ScrollingBarChart {
                                 .clipShape(RoundedRectangle(cornerRadius: boxCornerRadius))
                         }
                 }
+                .scaleEffect(x: boxScale,
+                             y: boxScale,
+                             anchor: overlayGeometry.line.maxX > visibleBounds.midX ? .bottomTrailing : .bottomLeading)
                 .position(
                     x: overlayGeometry.box.midX,
                     y: overlayGeometry.box.midY
                 )
+                .opacity(isLineVisible ? 1.0 : 0.0)
             }
         }
     }

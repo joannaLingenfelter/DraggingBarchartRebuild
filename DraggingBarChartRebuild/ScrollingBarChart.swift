@@ -53,8 +53,15 @@ struct ScrollingBarChart: View {
                 let chartOriginX = containerGeometry[chart.plotAreaFrame].origin.x
                 print("*** originX: \(chartOriginX)")
 
-                let containerOriginX = -chartOriginX
+                var containerOriginX = -chartOriginX
                 print("*** containerOriginX: \(containerOriginX)")
+                if value.predictedEndTranslation.width.magnitude > contentWidth {
+                    print("*** PAGE!")
+                    let translationSign = value.predictedEndTranslation.width / value.predictedEndTranslation.width.magnitude
+                    if translationSign.isFinite {
+                        containerOriginX += contentWidth * translationSign * -1.0
+                    }
+                }
 
                 let clampedOriginX = min(containerOriginX, chart.plotAreaSize.width - contentWidth)
                 print("*** clampedOriginX: \(clampedOriginX)")
@@ -81,13 +88,21 @@ struct ScrollingBarChart: View {
                 print("*** finalOffset: \(finalOffset)")
 
                 withAnimation(.easeOut(duration: pagingAnimationDuration)) {
-                    chartContentOffset = finalOffset
+                    chartContentOffset = finalOffset //+ (contentWidth / Double(dataSource.visibleBarCount)) * 0.25
                 }
 
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(pagingAnimationDuration))
-                    chartContentOffset = 0
+
+
+//                    Task { @MainActor in
                     dataSource.setLeadingVisibleData(finalLeadingEdgeData)
+                    chartContentOffset = 0
+//                    }
+//                    try? await Task.sleep(for: .seconds(1))
+
+//                    let leadingXValue = chart.value(atX: clampedOriginX, as: Date.self)!
+//                    print("*** leadingXValue: \(leadingXValue.formatted(date: .abbreviated, time: .omitted))")
                 }
             }
     }
@@ -95,13 +110,28 @@ struct ScrollingBarChart: View {
     @ChartContentBuilder
     func chart(showsAnnotations: Bool) -> some ChartContent {
         ForEach(dataSource.slicedData, id: \.date) { item in
-            BarMark(
-                x: .value("Day", item.date, unit: .month),
-                y: .value("Value", min(item.value, animatedUpperBound)),
-                width: .fixed(barWidth),
-                stacking: .unstacked
-            )
+            if showsAnnotations {
+                barMark(for: item)
+                    .annotation(position: .bottom, alignment: .bottom, spacing: 4.0) {
+                        Text(item.date.formatted(.dateTime.month()))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+            }
+            else {
+                barMark(for: item)
+            }
         }
+    }
+
+    @ChartContentBuilder
+    private func barMark(for chartData: ChartData) -> some ChartContent {
+        BarMark(
+            x: .value("Day", chartData.date, unit: .month),
+            y: .value("Value", min(chartData.value, animatedUpperBound)),
+            width: .fixed(barWidth),
+            stacking: .unstacked
+        )
     }
 
     private var chartYAxis: some View {
@@ -137,11 +167,17 @@ struct ScrollingBarChart: View {
                         }
                         .chartYScale(domain: 0 ... artificialUpperBound)
                         .chartXAxis {
-                            AxisMarks(
-                                format: .dateTime.month(),
-                                preset: .extended,
-                                values: .stride(by: .month)
-                            )
+                            AxisMarks(preset: .extended, position: .bottom, values: .automatic(desiredCount: 12)) {
+                                // noop
+                                AxisValueLabel("blah")
+                                    .foregroundStyle(.clear)
+                            }
+//                            AxisMarks(
+//                                format: .dateTime.month(),
+//                                preset: .aligned,
+//                                position: .bottom,
+//                                values: dataSource.slicedData.map(\.date)
+//                            )
                         }
                         .chartYAxis {
                             AxisMarks(
@@ -167,8 +203,10 @@ struct ScrollingBarChart: View {
                                         let clampedLocationX = min(max(location.x, 0), geometry.size.width)
                                         let currentX = clampedLocationX - originX
 
-                                        if let selectedDate = chart.value(atX: currentX, as: Date.self),
-                                           let selectedBar = dataSource.chartData(closestTo: selectedDate) {
+                                        guard let selectedDate = chart.value(atX: currentX, as: Date.self) else {
+                                            return
+                                        }
+                                        if let selectedBar = dataSource.chartData(closestTo: selectedDate, granularity: .month) {
                                             if let selectedChartData {
                                                 if selectedBar == selectedChartData {
                                                     self.selectedChartData = nil
@@ -184,7 +222,7 @@ struct ScrollingBarChart: View {
                             }
                         }
                         .chartOverlay { chart in
-                            if let selectedChartData = dataSource.visibleData(of: animatedSelectedContent) {
+                            if let selectedChartData = animatedSelectedContent {
                                 LollipopOverlay(
                                     selectedChartData: selectedChartData,
                                     chart: chart,
