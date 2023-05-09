@@ -80,18 +80,11 @@ class DataSource: ObservableObject {
         objectWillChange.send()
     }
 
-    func chartData(closestTo date: Date) -> ChartData? {
+    func chartData(closestTo date: Date, granularity: Calendar.Component = .month) -> ChartData? {
         allData.sorted { lhs, rhs in
-            if calendar.isDate(date, equalTo: lhs.date, toGranularity: .month) {
-                return true
-            } else if calendar.isDate(date, equalTo: rhs.date, toGranularity: .month) {
-                return false
-            } else {
-                let comparison = calendar.compare(lhs.date,
-                                                  to: rhs.date,
-                                                  toGranularity: .nanosecond)
-                return comparison == .orderedAscending
-            }
+            let deltaLhs = calendar.dateComponents([granularity], from: lhs.date, to: date)
+            let deltaRhs = calendar.dateComponents([granularity], from: rhs.date, to: date)
+            return deltaLhs.value(for: granularity)!.magnitude < deltaRhs.value(for: granularity)!.magnitude
         }
         .first
     }
@@ -114,7 +107,8 @@ class DataSource: ObservableObject {
         guard let leadingLastIndex = self.allData.index(lastIndex, offsetBy: -visibleBarCount + 1, limitedBy: 0) else {
             return nil
         }
-        return self.allData[leadingLastIndex]
+        let result = self.allData[leadingLastIndex]
+        return result
     }
 }
 

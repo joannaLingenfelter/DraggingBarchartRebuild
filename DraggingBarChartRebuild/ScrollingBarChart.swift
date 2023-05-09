@@ -62,7 +62,7 @@ struct ScrollingBarChart: View {
                 let leadingXValue = chart.value(atX: clampedOriginX, as: Date.self)!
                 print("*** leadingXValue: \(leadingXValue.formatted(date: .abbreviated, time: .omitted))")
 
-                let chartData = dataSource.chartData(closestTo: leadingXValue)!
+                let chartData = dataSource.chartData(closestTo: leadingXValue, granularity: .day)!
                 print("*** chartData: \(chartData.date.formatted(date: .abbreviated, time: .omitted))")
 
                 let chartPosition = chart.position(forX: chartData.date)!
@@ -86,8 +86,8 @@ struct ScrollingBarChart: View {
 
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(pagingAnimationDuration))
-                    dataSource.setLeadingVisibleData(chartData)
                     chartContentOffset = 0
+                    dataSource.setLeadingVisibleData(finalLeadingEdgeData)
                 }
             }
     }
