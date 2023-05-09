@@ -96,20 +96,11 @@ struct ScrollingBarChart: View {
     func chart(showsAnnotations: Bool) -> some ChartContent {
         ForEach(dataSource.slicedData, id: \.date) { item in
             BarMark(
-                x: .value("Day", item.date, unit: .day),
+                x: .value("Day", item.date, unit: .month),
                 y: .value("Value", min(item.value, animatedUpperBound)),
                 width: .fixed(barWidth),
                 stacking: .unstacked
             )
-            .annotation {
-                if showsAnnotations {
-                    VStack(alignment: .leading) {
-                        Text(item.date.formatted(.dateTime.month().day()))
-                            .foregroundColor(item.isVirtual ? .orange : .black)
-                        Text(String(format: "%.2f", item.value))
-                    }
-                }
-            }
         }
     }
 
@@ -147,10 +138,12 @@ struct ScrollingBarChart: View {
                         .chartYScale(domain: 0 ... artificialUpperBound)
                         .chartXAxis {
                             AxisMarks(
-                                format: .dateTime.weekday().locale(locale),
+                                format: .dateTime.month(),
                                 preset: .extended,
-                                values: .stride(by: .day)
+                                values: .stride(by: .month)
                             )
+
+
                         }
                         .chartYAxis {
                             AxisMarks(
@@ -158,6 +151,7 @@ struct ScrollingBarChart: View {
                                 values: .automatic(desiredCount: 4))
                             {
                                 AxisGridLine()
+                                    //.foregroundStyle(.clear)
                             }
                         }
                         .offset(x: chartContentOffset - chartGeometry.size.width)
